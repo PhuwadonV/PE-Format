@@ -221,14 +221,14 @@ DB Section.rdata.size - ($ - $$) DUP 0
 SECTION .reloc START=Section.reloc.start VSTART=Section.reloc.vstart
 
 Reloc.text.vstart:
-DD Section.text.start
+DD Section.text.vstart
 DD Reloc.text.vend - Reloc.text.vstart
 DW 0xA013
 DW 0xA01D
 Reloc.text.vend:
 
 Reloc.rdata.vstart:
-DD Section.rdata.start
+DD Section.rdata.vstart
 DD Reloc.rdata.vsize
 DW 0xA040
 DW 0
