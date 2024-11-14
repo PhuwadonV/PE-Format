@@ -1,135 +1,188 @@
 BITS 64
 
-SECTION .header START=0
-DOS_Header:
+%assign Image.base           0x140000000
+%assign Image.vstart         0
+%define Image.vsize          (Image.vend - Image.vstart)
+
+%assign Header.size          0x200
+
+%assign NumberOfSections     3
+
+%assign Section.text.start   0x200
+%assign Section.rdata.start  0x400
+%assign Section.reloc.start  0x600
+
+%assign Section.text.size    0x200
+%assign Section.rdata.size   0x200
+%assign Section.reloc.size   0x200
+
+%assign Section.text.vstart  0x1000
+%assign Section.rdata.vstart 0x2000
+%assign Section.reloc.vstart 0x3000
+
+%define Section.text.vsize   (Section.text.vend - Section.text.vstart)
+%define Section.rdata.vsize  (Section.rdata.vend - Section.rdata.vstart)
+%define Section.reloc.vsize  (Section.reloc.vend - Section.reloc.vstart)
+
+%define Reloc.text.vsize  (Reloc.text.vend - Reloc.text.vstart)
+%define Reloc.rdata.vsize (Reloc.rdata.vend - Reloc.rdata.vstart)
+
+SECTION Header START=0
+Header.DOS:
 DB "MZ"
 DB 0x3A DUP 0
-DD COFF_Header
+DD Header.COFF
 
-COFF_Header:
+Header.COFF:
 DB "PE", 0, 0
-DW 0x8664      ; Machine
-DW 3           ; NumberOfSections
-DD 0           ; TimeDateStamp
-DD 0           ; PointerToSymbolTable
-DD 0           ; NumberOfSymbols
-DW 0xF0        ; SizeOfOptionalHeader
-DW 0x0022      ; Characteristics
+DW 0x8664               ; Machine
+DW NumberOfSections     ; NumberOfSections
+DD 0                    ; TimeDateStamp
+DD 0                    ; PointerToSymbolTable
+DD 0                    ; NumberOfSymbols
+DW 0xF0                 ; SizeOfOptionalHeader
+DW 0x0022               ; Characteristics
 
-COFF_Standard_Fields:
-DW 0x020B      ; Magic
-DB 0           ; MajorLinkerVersion
-DB 0           ; MinorLinkerVersion
-DD 0           ; SizeOfCode
-DD 0           ; SizeOfInitializedData
-DD 0           ; SizeOfUninitializedData
-DD 0x1000      ; AddressOfEntryPoint
-DD 0           ; BaseOfCode
+Header.COFF.StandardFields:
+DW 0x020B               ; Magic
+DB 0                    ; MajorLinkerVersion
+DB 0                    ; MinorLinkerVersion
+DD 0                    ; SizeOfCode
+DD 0                    ; SizeOfInitializedData
+DD 0                    ; SizeOfUninitializedData
+DD Section.text.vstart  ; AddressOfEntryPoint
+DD 0                    ; BaseOfCode
 
-Windows_Specific_Fields:
-DQ 0x140000000 ; ImageBase
-DD 0x1000      ; SectionAlignment
-DD 0x200       ; FileAlignment
-DW 0           ; MajorOperatingSystemVersion
-DW 0           ; MinorOperatingSystemVersion
-DW 0           ; MajorImageVersion
-DW 0           ; MinorImageVersion
-DW 6           ; MajorSubsystemVersion
-DW 0           ; MinorSubsystemVersion
-DD 0           ; Win32VersionValue
-DD 0x4000      ; SizeOfImage
-DD 0x200       ; SizeOfHeaders
-DD 0           ; CheckSum
-DW 0x3         ; Subsystem
-DW 0x8160      ; DllCharacteristics
-DQ 0           ; SizeOfStackReserve
-DQ 0           ; SizeOfStackCommit
-DQ 0           ; SizeOfHeapReserve
-DQ 0           ; SizeOfHeapCommit
-DD 0           ; LoaderFlags
-DD 16          ; NumberOfRvaAndSizes
+Header.COFF.WindowsSpecificFields:
+DQ Image.base           ; ImageBase
+DD 0x1000               ; SectionAlignment
+DD 0x200                ; FileAlignment
+DW 0                    ; MajorOperatingSystemVersion
+DW 0                    ; MinorOperatingSystemVersion
+DW 0                    ; MajorImageVersion
+DW 0                    ; MinorImageVersion
+DW 6                    ; MajorSubsystemVersion
+DW 0                    ; MinorSubsystemVersion
+DD 0                    ; Win32VersionValue
+DD Image.vsize          ; SizeOfImage
+DD Header.size          ; SizeOfHeaders
+DD 0                    ; CheckSum
+DW 0x3                  ; Subsystem
+DW 0x8160               ; DllCharacteristics
+DQ 0                    ; SizeOfStackReserve
+DQ 0                    ; SizeOfStackCommit
+DQ 0                    ; SizeOfHeapReserve
+DQ 0                    ; SizeOfHeapCommit
+DD 0                    ; LoaderFlags
+DD 16                   ; NumberOfRvaAndSizes
 
-Data_Directories:
-DD 0     , 0    ; ExportTable          , Size
-DD 0x2048, 0    ; ImportTable          , Size
-DD 0     , 0    ; ResourceTable        , Size
-DD 0     , 0    ; ExceptionTable       , Size
-DD 0     , 0    ; CertificateTable     , Size
-DD 0x3000, 0x18 ; BaseRelocationTable  , Size
-DD 0     , 0    ; Debug                , Size
-DD 0     , 0    ; Architecture         , Size
-DD 0     , 0    ; GlobalPtr            , Zero
-DD 0     , 0    ; TLSTable             , Size
-DD 0     , 0    ; LoadConfigTable      , Size
-DD 0     , 0    ; BoundImport          , Size
-DD 0     , 0    ; IAT                  , Size
-DD 0     , 0    ; DelayImportDescriptor, Size
-DD 0     , 0    ; CLRRuntimeHeader     , Size
-DQ 0            ; Reserved (must be zero)
+Header.COFF.DataDirectories:
+DD 0                    ; ExportTable
+DD 0                    ; Size
+DD ImportTable          ; ImportTable
+DD 0                    ; Size
+DD 0                    ; ResourceTable
+DD 0                    ; Size
+DD 0                    ; ExceptionTable
+DD 0                    ; Size
+DD 0                    ; CertificateTable
+DD 0                    ; Size
+DD Section.reloc.vstart ; BaseRelocationTable
+DD Section.reloc.vsize  ; Size
+DD 0                    ; Debug
+DD 0                    ; Size
+DD 0                    ; Architecture
+DD 0                    ; Size
+DD 0                    ; GlobalPtr
+DD 0                    ; Zero
+DD 0                    ; TLSTable
+DD 0                    ; Size
+DD 0                    ; LoadConfigTable
+DD 0                    ; Size
+DD 0                    ; BoundImport
+DD 0                    ; Size
+DD 0                    ; IAT
+DD 0                    ; Size
+DD 0                    ; DelayImportDescriptor
+DD 0                    ; Size
+DD 0                    ; CLRRuntimeHeader
+DD 0                    ; Size
+DQ 0                    ; Reserved (must be zero)
 
-Section_Table:
-DB ".text", 0, 0, 0
-DD 0x39        ; VirtualSize
-DD 0x1000      ; VirtualAddress
-DD 0x200       ; SizeOfRawData
-DD 0x200       ; PointerToRawData
-DD 0           ; PointerToRelocations
-DD 0           ; PointerToLinenumbers
-DW 0           ; NumberOfRelocations
-DW 0           ; NumberOfLinenumbers
-DD 0x60000020  ; Characteristics
+Header.COFF.SectionTable:
+DB ".text"
+ALIGN 8, DB 0
+DD Section.text.vsize   ; VirtualSize
+DD Section.text.vstart  ; VirtualAddress
+DD Section.text.size    ; SizeOfRawData
+DD Section.text.start   ; PointerToRawData
+DD 0                    ; PointerToRelocations
+DD 0                    ; PointerToLinenumbers
+DW 0                    ; NumberOfRelocations
+DW 0                    ; NumberOfLinenumbers
+DD 0x60000020           ; Characteristics
 
-DB ".rdata", 0, 0
-DD 0xC8        ; VirtualSize
-DD 0x2000      ; VirtualAddress
-DD 0x200       ; SizeOfRawData
-DD 0x400       ; PointerToRawData
-DD 0           ; PointerToRelocations
-DD 0           ; PointerToLinenumbers
-DW 0           ; NumberOfRelocations
-DW 0           ; NumberOfLinenumbers
-DD 0x40000040  ; Characteristics
+DB ".rdata"
+ALIGN 8, DB 0
+DD Section.rdata.vsize  ; VirtualSize
+DD Section.rdata.vstart ; VirtualAddress
+DD Section.rdata.size   ; SizeOfRawData
+DD Section.rdata.start  ; PointerToRawData
+DD 0                    ; PointerToRelocations
+DD 0                    ; PointerToLinenumbers
+DW 0                    ; NumberOfRelocations
+DW 0                    ; NumberOfLinenumbers
+DD 0x40000040           ; Characteristics
 
-DB ".reloc", 0, 0
-DD 0x18        ; VirtualSize
-DD 0x3000      ; VirtualAddress
-DD 0x200       ; SizeOfRawData
-DD 0x600       ; PointerToRawData
-DD 0           ; PointerToRelocations
-DD 0           ; PointerToLinenumbers
-DW 0           ; NumberOfRelocations
-DW 0           ; NumberOfLinenumbers
-DD 0x42000040  ; Characteristics
+DB ".reloc"
+ALIGN 8, DB 0
+DD Section.rdata.vsize  ; VirtualSize
+DD Section.reloc.vstart ; VirtualAddress
+DD Section.reloc.size   ; SizeOfRawData
+DD Section.reloc.start  ; PointerToRawData
+DD 0                    ; PointerToRelocations
+DD 0                    ; PointerToLinenumbers
+DW 0                    ; NumberOfRelocations
+DW 0                    ; NumberOfLinenumbers
+DD 0x42000040           ; Characteristics
 
-SECTION .text START=0x200 VSTART=0x1000
+Header.vend:
+DB Header.size - ($ - $$) DUP 0
+
+SECTION .text START=Section.text.start VSTART=Section.text.vstart
 sub rsp, 32 + 8
 mov ecx, 0x800
-call [rel Sleep]
+call [rel knl.sleep]
 xor ecx, ecx
-mov rdx, 0x140002030
-mov r8, 0x140002030
+mov rdx, Image.base + HelloWorld
+mov r8,  Image.base + HelloWorld
 xor r9, r9
-call [rel MSG]
+call [rel usr.msg]
 mov ecx, 1234567890
-call [rel Exit]
+call [rel knl.exit]
 
-SECTION .rdata START=0x400 VSTART=0x2000
-Exit:
+Section.text.vend:
+DB Section.text.size - ($ - $$) DUP 0
+
+SECTION .rdata START=Section.rdata.start VSTART=Section.rdata.vstart
+knl.exit:
 DQ 0x20A8
-Sleep:
+knl.sleep:
 DQ 0x20A0
 DQ 0
 
-MSG:
+usr.msg:
 DQ 0x20B8
 DQ 0
 
 ALIGN 16, DB 0
+HelloWorld:
 DB "Hello, World!", 0
 
 ALIGN 8, DB 0
-DQ 0x140000000
+DQ Image.base
 
+ImportTable:
 DD 0x2078
 DD 0
 DD 0
@@ -162,15 +215,26 @@ DW 0
 DB "msg", 0
 DB "usr.dll", 0
 
-SECTION .reloc START=0x600 VSTART=0x3000
-DD 0x1000
-DD 0xC
+Section.rdata.vend:
+DB Section.rdata.size - ($ - $$) DUP 0
+
+SECTION .reloc START=Section.reloc.start VSTART=Section.reloc.vstart
+
+Reloc.text.vstart:
+DD Section.text.start
+DD Reloc.text.vend - Reloc.text.vstart
 DW 0xA013
 DW 0xA01D
+Reloc.text.vend:
 
-DD 0x2000
-DD 0xC
+Reloc.rdata.vstart:
+DD Section.rdata.start
+DD Reloc.rdata.vsize
 DW 0xA040
 DW 0
+Reloc.rdata.vend:
 
-DB 0x200 - ($ - $$) DUP 0
+Section.reloc.vend:
+DB Section.reloc.size - ($ - $$) DUP 0
+
+Image.vend:
