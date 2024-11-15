@@ -1,33 +1,40 @@
 BITS 64
 
-%assign Image.base           0x140000000
-%assign Image.vstart         0
-%define Image.vsize          (Image.vend - Image.vstart)
+PageTableSize        EQU 0x1000
+DiskSectorSize       EQU 0x200
 
-%assign Header.size          0x200
+SectionAlignment     EQU PageTableSize
+FileAlignment        EQU DiskSectorSize
 
-%assign NumberOfSections     3
+Image.base           EQU 0x140000000
+Image.size           EQU 0x4000
 
-%assign Section.text.start   0x200
-%assign Section.rdata.start  0x400
-%assign Section.reloc.start  0x600
+Header.size          EQU 0x200
+Header.Optional.size EQU Header.Optional.end - Header.Optional.start
 
-%assign Section.text.size    0x200
-%assign Section.rdata.size   0x200
-%assign Section.reloc.size   0x200
+NumberOfSections     EQU 3
 
-%assign Section.text.vstart  0x1000
-%assign Section.rdata.vstart 0x2000
-%assign Section.reloc.vstart 0x3000
+Section.text.start   EQU 0x200
+Section.rdata.start  EQU 0x400
+Section.reloc.start  EQU 0x600
 
-%define Section.text.vsize   (Section.text.vend - Section.text.vstart)
-%define Section.rdata.vsize  (Section.rdata.vend - Section.rdata.vstart)
-%define Section.reloc.vsize  (Section.reloc.vend - Section.reloc.vstart)
+Section.text.size    EQU 0x200
+Section.rdata.size   EQU 0x200
+Section.reloc.size   EQU 0x200
 
-%define Reloc.text.vsize  (Reloc.text.vend - Reloc.text.vstart)
-%define Reloc.rdata.vsize (Reloc.rdata.vend - Reloc.rdata.vstart)
+Section.text.vstart  EQU 0x1000
+Section.rdata.vstart EQU 0x2000
+Section.reloc.vstart EQU 0x3000
+
+Section.text.vsize   EQU Section.text.vend - Section.text.vstart
+Section.rdata.vsize  EQU Section.rdata.vend - Section.rdata.vstart
+Section.reloc.vsize  EQU Section.reloc.vend - Section.reloc.vstart
+
+Reloc.text.vsize     EQU Reloc.text.vend - Reloc.text.vstart
+Reloc.rdata.vsize    EQU Reloc.rdata.vend - Reloc.rdata.vstart
 
 SECTION Header START=0
+
 Header.DOS:
 DB "MZ"
 DB 0x3A DUP 0
@@ -40,8 +47,10 @@ DW NumberOfSections     ; NumberOfSections
 DD 0                    ; TimeDateStamp
 DD 0                    ; PointerToSymbolTable
 DD 0                    ; NumberOfSymbols
-DW 0xF0                 ; SizeOfOptionalHeader
+DW Header.Optional.size ; SizeOfOptionalHeader
 DW 0x0022               ; Characteristics
+
+Header.Optional.start:
 
 Header.COFF.StandardFields:
 DW 0x020B               ; Magic
@@ -55,8 +64,8 @@ DD 0                    ; BaseOfCode
 
 Header.COFF.WindowsSpecificFields:
 DQ Image.base           ; ImageBase
-DD 0x1000               ; SectionAlignment
-DD 0x200                ; FileAlignment
+DD SectionAlignment     ; SectionAlignment
+DD FileAlignment        ; FileAlignment
 DW 0                    ; MajorOperatingSystemVersion
 DW 0                    ; MinorOperatingSystemVersion
 DW 0                    ; MajorImageVersion
@@ -64,7 +73,7 @@ DW 0                    ; MinorImageVersion
 DW 6                    ; MajorSubsystemVersion
 DW 0                    ; MinorSubsystemVersion
 DD 0                    ; Win32VersionValue
-DD Image.vsize          ; SizeOfImage
+DD Image.size           ; SizeOfImage
 DD Header.size          ; SizeOfHeaders
 DD 0                    ; CheckSum
 DW 0x3                  ; Subsystem
@@ -77,39 +86,42 @@ DD 0                    ; LoaderFlags
 DD 16                   ; NumberOfRvaAndSizes
 
 Header.COFF.DataDirectories:
-DD 0                    ; ExportTable
-DD 0                    ; Size
-DD ImportTable          ; ImportTable
-DD 0                    ; Size
-DD 0                    ; ResourceTable
-DD 0                    ; Size
-DD 0                    ; ExceptionTable
-DD 0                    ; Size
-DD 0                    ; CertificateTable
-DD 0                    ; Size
-DD Section.reloc.vstart ; BaseRelocationTable
-DD Section.reloc.vsize  ; Size
-DD 0                    ; Debug
-DD 0                    ; Size
-DD 0                    ; Architecture
-DD 0                    ; Size
-DD 0                    ; GlobalPtr
-DD 0                    ; Zero
-DD 0                    ; TLSTable
-DD 0                    ; Size
-DD 0                    ; LoadConfigTable
-DD 0                    ; Size
-DD 0                    ; BoundImport
-DD 0                    ; Size
-DD 0                    ; IAT
-DD 0                    ; Size
-DD 0                    ; DelayImportDescriptor
-DD 0                    ; Size
-DD 0                    ; CLRRuntimeHeader
-DD 0                    ; Size
-DQ 0                    ; Reserved (must be zero)
+DD 0                    ;  1.1 : ExportTable
+DD 0                    ;  1.2 : Size
+DD ImportTable          ;  2.1 : ImportTable
+DD 0                    ;  2.2 : Size
+DD 0                    ;  3.1 : ResourceTable
+DD 0                    ;  3.2 : Size
+DD 0                    ;  4.1 : ExceptionTable
+DD 0                    ;  4.2 : Size
+DD 0                    ;  5.1 : CertificateTable
+DD 0                    ;  5.2 : Size
+DD Section.reloc.vstart ;  6.1 : BaseRelocationTable
+DD Section.reloc.vsize  ;  6.2 : Size
+DD 0                    ;  7.1 : Debug
+DD 0                    ;  7.2 : Size
+DD 0                    ;  8.1 : Architecture
+DD 0                    ;  8.2 : Size
+DD 0                    ;  9.1 : GlobalPtr
+DD 0                    ;  9.2 : Zero
+DD 0                    ; 10.1 : TLSTable
+DD 0                    ; 10.2 : Size
+DD 0                    ; 11.1 : LoadConfigTable
+DD 0                    ; 11.2 : Size
+DD 0                    ; 12.1 : BoundImport
+DD 0                    ; 12.2 : Size
+DD 0                    ; 13.1 : IAT
+DD 0                    ; 13.2 : Size
+DD 0                    ; 14.1 : DelayImportDescriptor
+DD 0                    ; 14.2 : Size
+DD 0                    ; 15.1 : CLRRuntimeHeader
+DD 0                    ; 15.2 : Size
+DQ 0                    ; 16   : Reserved (must be zero)
+
+Header.Optional.end:
 
 Header.COFF.SectionTable:
+
 DB ".text"
 ALIGN 8, DB 0
 DD Section.text.vsize   ; VirtualSize
@@ -150,12 +162,15 @@ Header.vend:
 DB Header.size - ($ - $$) DUP 0
 
 SECTION .text START=Section.text.start VSTART=Section.text.vstart
+
 sub rsp, 32 + 8
 mov ecx, 0x800
 call [rel knl.sleep]
 xor ecx, ecx
 mov rdx, Image.base + HelloWorld
+Reloc.text.1.end:
 mov r8,  Image.base + HelloWorld
+Reloc.text.2.end:
 xor r9, r9
 call [rel usr.msg]
 mov ecx, 1234567890
@@ -165,6 +180,7 @@ Section.text.vend:
 DB Section.text.size - ($ - $$) DUP 0
 
 SECTION .rdata START=Section.rdata.start VSTART=Section.rdata.vstart
+
 knl.exit:
 DQ 0x20A8
 knl.sleep:
@@ -180,8 +196,10 @@ HelloWorld:
 DB "Hello, World!", 0
 
 ALIGN 8, DB 0
+Reloc.rdata.1:
 DQ Image.base
 
+ALIGN 4, DB 0
 ImportTable:
 DD 0x2078
 DD 0
@@ -222,19 +240,18 @@ SECTION .reloc START=Section.reloc.start VSTART=Section.reloc.vstart
 
 Reloc.text.vstart:
 DD Section.text.vstart
-DD Reloc.text.vend - Reloc.text.vstart
-DW 0xA013
-DW 0xA01D
+DD Reloc.text.vsize
+DW 0xA000 - Section.text.vstart + Reloc.text.1.end - 8
+DW 0xA000 - Section.text.vstart + Reloc.text.2.end - 8
+ALIGN 4, DB 0
 Reloc.text.vend:
 
 Reloc.rdata.vstart:
 DD Section.rdata.vstart
 DD Reloc.rdata.vsize
-DW 0xA040
-DW 0
+DW 0xA000 - Section.rdata.vstart + Reloc.rdata.1
+ALIGN 4, DB 0
 Reloc.rdata.vend:
 
 Section.reloc.vend:
 DB Section.reloc.size - ($ - $$) DUP 0
-
-Image.vend:

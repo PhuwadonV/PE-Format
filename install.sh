@@ -7,8 +7,9 @@ if [ -d $SCRIPT_PATH ]; then
 fi
 
 . /etc/os-release
+OS_ID_LIKE="$ID_LIKE"
 
-case "$ID_LIKE" in
+case "$OS_ID_LIKE" in
     'cygwin arch')
         pacman --needed --noconfirm -S nasm
         printf '\nPress any key to continue\n'
